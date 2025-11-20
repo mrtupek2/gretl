@@ -34,8 +34,6 @@ No copyright assignment is required to contribute to gretl.
 
 See [LICENSE](./LICENSE) for details.
 
-Unlimited Open Source - BSD 3-clause Distribution  
-`LLNL-CODE-805541`
-
-
+Unlimited Open Source - BSD 3-clause Distribution
+`LLNL-CODE-2013480`
 
