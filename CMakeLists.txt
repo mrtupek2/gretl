@@ -13,12 +13,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 file(GLOB_RECURSE cpp_sources 
   ${PROJECT_SOURCE_DIR}/src/*.cpp
   ${PROJECT_SOURCE_DIR}/src/*.hpp)
-
   
 add_library(gretl ${cpp_sources})
 
 target_include_directories(gretl PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
+file(GLOB_RECURSE gretl_headers 
+  ${PROJECT_SOURCE_DIR}/src/*.hpp)
+
+#install(
+#  TARGETS     gretl
+#  EXPORT      gretl-targets
+#  DESTINATION lib)
+
+#install(FILES ${gretl_headers} DESTINATION include/gretl)
 
 if (GRETL_ENABLE_ASAN)
   add_link_options(-fsanitize=address)
