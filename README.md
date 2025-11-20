@@ -16,13 +16,13 @@ In contrast to most machine learning applications, memory usage becomes an essen
 for many physics applications, especially time-integrated solutions to PDEs where dynamic check-
 pointing becomes essential. GRETL is particularly beneficial for applications, such as coupled
 multi-physics, where deriving adjoint-based sensitivities and managing checkpoint memory across
-modules becomes onerous. It may also be applicable to very deep Neural Networks which It is meant
+modules becomes onerous. It is meant
 to be used at a fairly high level, as the graph construction and memory management entails some
-overhead. A good rule of thumb for scientific applications is GRETL operations should be between
+overhead. A good rule of thumb for scientific applications is GRETL operations should be around
 parallel communication calls, not within them. Cases which can be readily handled by the GRETL
 library include: different time-integration algorithms per physics (e.g., coupled predictor-corrector
 algorithms, IMEX, etc.), sub-cycling, asynchronous integrators, state-dependent stable-timesteps,
-iterative solvers and coupling algorithms, controller algorithms, and more.
+iterative solvers, coupling algorithms, controller algorithms, and more.
 
 License
 -------
