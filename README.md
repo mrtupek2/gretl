@@ -13,8 +13,8 @@ graph that are no-longer in memory are automatically re-evaluated from upstream 
 states as needed for derivative sensitivity calculations (more precisely, vector-Jacobian products).
 
 In contrast to most machine learning applications, memory usage becomes an essential bottleneck
-for many physics applications, especially time-integrated solutions to PDEs where dynamic check-
-pointing becomes essential. GRETL is particularly beneficial for applications, such as coupled
+for many physics applications, especially time-integrated solutions to PDEs where dynamic checkpointing 
+becomes essential. GRETL is particularly beneficial for applications, such as coupled
 multi-physics, where deriving adjoint-based sensitivities and managing checkpoint memory across
 modules becomes onerous. It is meant
 to be used at a fairly high level, as the graph construction and memory management entails some
