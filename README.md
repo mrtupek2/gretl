@@ -11,6 +11,7 @@ limit the maximum memory usage by automatically dynamic checkpointing the data o
 each graph operations (see Wang, Moin, Iaccarino, 2009). During backpropagation, parts of the
 graph that are no-longer in memory are automatically re-evaluated from upstream checkpointed
 states as needed for derivative sensitivity calculations (more precisely, vector-Jacobian products).
+
 In contrast to most machine learning applications, memory usage becomes an essential bottleneck
 for many physics applications, especially time-integrated solutions to PDEs where dynamic check-
 pointing becomes essential. GRETL is particularly beneficial for applications, such as coupled
@@ -23,17 +24,10 @@ library include: different time-integration algorithms per physics (e.g., couple
 algorithms, IMEX, etc.), sub-cycling, asynchronous integrators, state-dependent stable-timesteps,
 iterative solvers and coupling algorithms, controller algorithms, and more.
 
-Release
+License
 -------
 
-Copyright (c) Lawrence Livermore National Security, LLC. 
-Produced at the Lawrence Livermore National Laboratory.
-
-Copyrights and patents in the Smith project are retained by contributors.
-No copyright assignment is required to contribute to gretl.
-
+Unlimited Open Source - BSD 3-clause Distribution
 See [LICENSE](./LICENSE) for details.
 
-Unlimited Open Source - BSD 3-clause Distribution
 `LLNL-CODE-2013480`
-
