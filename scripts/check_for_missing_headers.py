@@ -70,8 +70,8 @@ def main():
     print("============================================================")
 
     # grab headers from install and src
-    install_headers = get_headers_from(os.path.join(install_dir, "include", "gretl"))
-    src_headers = get_headers_from(os.path.join(src_dir, "gretl"))
+    install_headers = get_headers_from(os.path.join(install_dir, "include"))
+    src_headers = get_headers_from(os.path.join(src_dir))
     
     # check if each header in src is in install as well
     res = 0
