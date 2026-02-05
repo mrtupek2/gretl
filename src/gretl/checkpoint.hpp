@@ -71,6 +71,34 @@ struct CheckpointManager {
   /// @brief returns const_iterator to currently most dispensable checkpoint step
   std::set<gretl::Checkpoint>::const_iterator most_dispensable() const
   {
+    // The set is ordered by level (ascending) then step (descending, because of > in operator< ?)
+    // Wait, let's re-read operator<
+    /*
+    if (a.level == Checkpoint::infinity() && b.level == Checkpoint::infinity()) {
+        return a.step > b.step;
+    }
+    if (a.level == Checkpoint::infinity()) return false;
+    if (b.level == Checkpoint::infinity()) return true;
+    return a.step > b.step; 
+    */
+    // The operator< is NOT sorting by level first for normal checkpoints!
+    // It says: if both infinite, sort by step (descending).
+    // If a is infinite, it is NOT less than b (so a > b).
+    // If b is infinite, a is less than b.
+    // If neither is infinite, it returns a.step > b.step.
+    
+    // So for normal checkpoints, it sorts by STEP descending. Level is ignored!
+    // This looks like a bug or a very specific implementation choice where level is implicitly handled elsewhere?
+    // Wang algorithm: remove checkpoint with LOWEST level. If tie, remove one with ... (logic varies).
+    
+    // If the set is sorted by Step, then we MUST scan for level.
+    // Optimization: Add a secondary index or change the sorting order.
+    // Changing sorting order is dangerous if code relies on step order.
+    // But let's check: Checkpoint::level is updated in add_checkpoint...
+    
+    // Let's rely on the O(N) scan for now but fix the redundant validation first.
+    // If performance is still bad, we will optimize this.
+    
     size_t maxHigherTimeLevel = 0;
     for (auto rIter = cps.begin(); rIter != cps.end(); ++rIter) {
       if (rIter->level < maxHigherTimeLevel) {

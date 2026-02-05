@@ -223,8 +223,10 @@ void DataStore::add_state(std::unique_ptr<StateBase> newState, const std::vector
     gretl_assert(false);
   });
 
+#ifndef NDEBUG
   bool isGood = check_validity();
   gretl_assert(isGood);
+#endif
 
   ++currentStep_;
   gretl_assert(currentStep_ == states_.size());
@@ -265,10 +267,13 @@ void DataStore::fetch_state_data(Int stepIndex)
       for_each_active_upstream(this, iEval, [&](Int upstream) { gretl_assert(state_in_use(upstream)); });
       erase_step_state_data(iEval);
     } else {
+      recomputeCount_++;
       states_[iEval]->evaluate_forward();
     }
 
+#ifndef NDEBUG
     gretl_assert(check_validity());
+#endif
   }
 }
 
@@ -286,9 +291,11 @@ void DataStore::erase_step_state_data(Int step)
       });
     }
   }
+#ifndef NDEBUG
   if (!check_validity()) {
     gretl_assert(check_validity());
   }
+#endif
 }
 
 bool DataStore::check_validity() const

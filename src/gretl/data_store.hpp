@@ -234,6 +234,9 @@ class DataStore {
   /// upstream; and 3.) an external copy of this state is not being help for potential future use outside of the graph.
   void try_to_free(Int step);
 
+  /// @brief get recompute count
+  size_t get_recompute_count() const { return recomputeCount_; }
+
   std::vector<std::unique_ptr<StateBase>> states_;  ///< states for steps
   std::vector<std::unique_ptr<std::any>> duals_;    ///< duals for steps
   std::vector<UpstreamStates> upstreams_;           ///< upstreams dependencies for steps
@@ -256,6 +259,8 @@ class DataStore {
 
   /// @brief specifies if graph is in construction or back-prop mode.  This is used for internal asserts.
   bool stillConstructingGraph_ = true;
+
+  size_t recomputeCount_ = 0; /// < count of recomputations
 
   friend struct StateBase;
 
