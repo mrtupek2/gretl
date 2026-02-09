@@ -22,8 +22,8 @@
 #include "gretl/vector_state.hpp"
 #include "gretl/test_utils.hpp"
 
-using gretl::State;
 using gretl::DataStore;
+using gretl::State;
 using gretl::VectorState;
 
 // ---------------------------------------------------------------------------
@@ -72,15 +72,13 @@ static State<double> build_fanout_in_subfunc(const State<double>& x0, int fanWid
 static State<double> build_nested_subfuncs(const State<double>& x0)
 {
   auto mid = build_chain_in_subfunc(x0, 3);   // 3-step chain
-  auto out = build_chain_in_subfunc(mid, 3);   // another 3-step chain
+  auto out = build_chain_in_subfunc(mid, 3);  // another 3-step chain
   return out;
 }
 
 // Build a chain that saves intermediates into a user-held vector,
 // simulating the pattern of "holding states in scope externally."
-static State<double> build_chain_holding_intermediates(
-    const State<double>& x0, int N,
-    std::vector<State<double>>& held)
+static State<double> build_chain_holding_intermediates(const State<double>& x0, int N, std::vector<State<double>>& held)
 {
   State<double> x = x0;
   for (int i = 0; i < N; ++i) {
@@ -263,10 +261,10 @@ TEST(AssignmentOperator, ReassignMidGraph)
   DataStore store(4);
   auto x0 = store.create_state<double, double>(1.0);
 
-  auto a = gretl::axpb(2.0, x0, 0.0);   // step 1: 2.0
-  a = gretl::axpb(3.0, x0, 0.0);        // step 2: 3.0, old step 1 freed
-  a = gretl::axpb(4.0, a, 0.0);         // step 3: 12.0, old step 2 is upstream so NOT freed
-  auto result = gretl::axpb(1.0, a, 0.0); // step 4: 12.0
+  auto a = gretl::axpb(2.0, x0, 0.0);      // step 1: 2.0
+  a = gretl::axpb(3.0, x0, 0.0);           // step 2: 3.0, old step 1 freed
+  a = gretl::axpb(4.0, a, 0.0);            // step 3: 12.0, old step 2 is upstream so NOT freed
+  auto result = gretl::axpb(1.0, a, 0.0);  // step 4: 12.0
 
   EXPECT_NEAR(result.get(), 12.0, 1e-14);
 
@@ -373,9 +371,9 @@ TEST(DAGTopology, DiamondDependency)
   DataStore store(4);
   auto x0 = store.create_state<double, double>(3.0);
 
-  auto a = gretl::axpb(2.0, x0, 1.0);  // 2*3+1 = 7
-  auto b = gretl::axpb(3.0, x0, -1.0); // 3*3-1 = 8
-  auto c = a * b;                        // 7*8 = 56
+  auto a = gretl::axpb(2.0, x0, 1.0);   // 2*3+1 = 7
+  auto b = gretl::axpb(3.0, x0, -1.0);  // 3*3-1 = 8
+  auto c = a * b;                       // 7*8 = 56
 
   EXPECT_NEAR(c.get(), 56.0, 1e-14);
 
@@ -395,9 +393,9 @@ TEST(DAGTopology, MultiInputDiamond)
   auto x0 = store.create_state<double, double>(2.0);
   auto y0 = store.create_state<double, double>(3.0);
 
-  auto a = x0 + y0;       // 5
-  auto b = x0 * y0;       // 6
-  auto c = a + b;          // 11
+  auto a = x0 + y0;  // 5
+  auto b = x0 * y0;  // 6
+  auto c = a + b;    // 11
 
   EXPECT_NEAR(c.get(), 11.0, 1e-14);
 
@@ -416,9 +414,9 @@ TEST(DAGTopology, SkipConnection)
   DataStore store(5);
   auto x0 = store.create_state<double, double>(2.0);
 
-  auto a = gretl::axpb(2.0, x0, 0.0);   // 4
-  auto b = gretl::axpb(3.0, a, 0.0);    // 12
-  auto c = b + x0;                        // 12 + 2 = 14
+  auto a = gretl::axpb(2.0, x0, 0.0);  // 4
+  auto b = gretl::axpb(3.0, a, 0.0);   // 12
+  auto c = b + x0;                     // 12 + 2 = 14
 
   EXPECT_NEAR(c.get(), 14.0, 1e-14);
 
@@ -570,10 +568,10 @@ TEST(NonlinearStress, MixedLinearNonlinear)
   auto x0 = store.create_state<double, double>(0.5);
   auto y0 = store.create_state<double, double>(0.3);
 
-  auto a = x0 + y0;      // 0.8
-  auto b = a * x0;        // 0.8 * 0.5 = 0.4
-  auto c = b + y0;        // 0.4 + 0.3 = 0.7
-  auto d = c * a;          // 0.7 * 0.8 = 0.56
+  auto a = x0 + y0;  // 0.8
+  auto b = a * x0;   // 0.8 * 0.5 = 0.4
+  auto c = b + y0;   // 0.4 + 0.3 = 0.7
+  auto d = c * a;    // 0.7 * 0.8 = 0.56
 
   EXPECT_NEAR(d.get(), 0.56, 1e-14);
 
@@ -721,9 +719,9 @@ TEST(VectorStateStress, DiamondWithVectors)
   auto a = store.create_state(dataA, gretl::vec::initialize_zero_dual);
   auto b = store.create_state(dataB, gretl::vec::initialize_zero_dual);
 
-  auto c = a + b;       // {4, 6}
-  auto d = a * b;       // {3, 8}
-  auto e = c + d;       // {7, 14}
+  auto c = a + b;                       // {4, 6}
+  auto d = a * b;                       // {3, 8}
+  auto e = c + d;                       // {7, 14}
   auto f = gretl::inner_product(e, e);  // 49+196=245
 
   gretl::set_as_objective(f);
@@ -759,12 +757,12 @@ TEST(MultiPersistentState, ThreeInputsDeepGraph)
   auto z = store.create_state<double, double>(3.0);
 
   // Deep graph mixing all three inputs
-  auto a = x + y;           // 3
-  auto b = a * z;           // 9
-  auto c = b + x;           // 10
-  auto d = c * y;           // 20
-  auto e = d + z;           // 23
-  auto f = e * x;           // 23
+  auto a = x + y;  // 3
+  auto b = a * z;  // 9
+  auto c = b + x;  // 10
+  auto d = c * y;  // 20
+  auto e = d + z;  // 23
+  auto f = e * x;  // 23
 
   gretl::set_as_objective(f);
   store.back_prop();
@@ -798,11 +796,11 @@ TEST(MultiPersistentState, RepeatedUseOfAllInputs)
   auto y = store.create_state<double, double>(0.3);
   auto z = store.create_state<double, double>(0.7);
 
-  auto a = x * y;           // early use of x, y
-  auto b = a + z;           // early use of z
-  auto c = b * x;           // x used again (skip)
-  auto d = c + y;           // y used again (skip)
-  auto e = d * z;           // z used again (skip)
+  auto a = x * y;  // early use of x, y
+  auto b = a + z;  // early use of z
+  auto c = b * x;  // x used again (skip)
+  auto d = c + y;  // y used again (skip)
+  auto e = d * z;  // z used again (skip)
 
   gretl::set_as_objective(e);
   store.back_prop();
@@ -901,9 +899,9 @@ TEST(EdgeCases, DeepChainSingleBudget)
 // Helper: creates a temporary state, uses it, returns something derived from it
 static State<double> create_use_and_discard(const State<double>& input, double scale)
 {
-  auto temp = gretl::axpb(scale, input, 0.0);   // temp goes out of scope after return
-  auto temp2 = gretl::axpb(0.5, temp, 0.0);     // temp2 goes out of scope too
-  return gretl::axpb(1.0, temp2, 1.0);           // return final
+  auto temp = gretl::axpb(scale, input, 0.0);  // temp goes out of scope after return
+  auto temp2 = gretl::axpb(0.5, temp, 0.0);    // temp2 goes out of scope too
+  return gretl::axpb(1.0, temp2, 1.0);         // return final
 }
 
 TEST(TemporaryStateInSubFunction, BasicPattern)
@@ -912,9 +910,9 @@ TEST(TemporaryStateInSubFunction, BasicPattern)
   auto x0 = store.create_state<double, double>(4.0);
 
   // Call sub-function 3 times in sequence
-  auto r1 = create_use_and_discard(x0, 2.0);     // (2*4)*0.5 + 1 = 5
-  auto r2 = create_use_and_discard(r1, 3.0);      // (3*5)*0.5 + 1 = 8.5
-  auto r3 = create_use_and_discard(r2, 1.0);      // (1*8.5)*0.5 + 1 = 5.25
+  auto r1 = create_use_and_discard(x0, 2.0);  // (2*4)*0.5 + 1 = 5
+  auto r2 = create_use_and_discard(r1, 3.0);  // (3*5)*0.5 + 1 = 8.5
+  auto r3 = create_use_and_discard(r2, 1.0);  // (1*8.5)*0.5 + 1 = 5.25
 
   EXPECT_NEAR(r3.get(), 5.25, 1e-14);
 
@@ -1070,9 +1068,7 @@ TEST(PerformanceScaling, LinearChainRecomputationCount)
     size_t budget;
   };
   std::vector<Config> configs = {
-      {50, 3},  {50, 5},  {50, 10}, {50, 50},
-      {200, 3}, {200, 5}, {200, 10}, {200, 50},
-      {500, 5}, {500, 10}, {500, 50},
+      {50, 3}, {50, 5}, {50, 10}, {50, 50}, {200, 3}, {200, 5}, {200, 10}, {200, 50}, {500, 5}, {500, 10}, {500, 50},
   };
 
   std::cout << "\n--- Recomputation counts: N steps, S budget, fwd_evals (backprop), ratio=evals/N ---\n";
@@ -1094,9 +1090,7 @@ TEST(PerformanceScaling, LinearChainRecomputationCount)
     int backprop_evals = g_eval_count;
 
     double ratio = static_cast<double>(backprop_evals) / cfg.N;
-    std::cout << "  N=" << cfg.N << " S=" << cfg.budget
-              << " fwd=" << fwd_evals
-              << " back=" << backprop_evals
+    std::cout << "  N=" << cfg.N << " S=" << cfg.budget << " fwd=" << fwd_evals << " back=" << backprop_evals
               << " ratio=" << ratio << "\n";
 
     // Gradient should still be correct
@@ -1131,8 +1125,7 @@ TEST(PerformanceScaling, ConstructionTimeScaling)
     double ms = elapsed_ms(start);
 
     double ratio = (prev_ms > 0) ? ms / prev_ms : 0;
-    std::cout << "  N=" << N << " construct=" << ms << "ms"
-              << (prev_ms > 0 ? " ratio=" + std::to_string(ratio) : "")
+    std::cout << "  N=" << N << " construct=" << ms << "ms" << (prev_ms > 0 ? " ratio=" + std::to_string(ratio) : "")
               << "\n";
     prev_ms = ms;
 
@@ -1168,10 +1161,8 @@ TEST(PerformanceScaling, BackpropTimeVsBudget)
     store.back_prop();
     double ms = elapsed_ms(start);
 
-    std::cout << "  budget=" << budget
-              << " backprop=" << ms << "ms"
-              << " recomps=" << g_eval_count
-              << "\n";
+    std::cout << "  budget=" << budget << " backprop=" << ms << "ms"
+              << " recomps=" << g_eval_count << "\n";
 
     EXPECT_NEAR(x0.get_dual(), std::pow(0.99, N), std::pow(0.99, N) * 1e-4);
   }
@@ -1322,8 +1313,7 @@ TEST(PerformanceScaling, WideFanoutScaling)
     double backprop_ms = elapsed_ms(start);
 
     double coeff = static_cast<double>(W * (W + 1)) / 2.0;
-    std::cout << "  W=" << W
-              << " construct=" << construct_ms << "ms"
+    std::cout << "  W=" << W << " construct=" << construct_ms << "ms"
               << " backprop=" << backprop_ms << "ms\n";
 
     EXPECT_NEAR(x0.get_dual(), coeff, 1e-8);
@@ -1346,11 +1336,11 @@ TEST(PerformanceScaling, DeepDAGWithMultipleInputs)
     auto y = store.create_state<double, double>(0.3);
 
     auto start = std::chrono::steady_clock::now();
-    auto a = x + y;           // 0.8
+    auto a = x + y;                                                // 0.8
     auto b = gretl::axpb(0.5, x, 0.0) + gretl::axpb(0.3, y, 0.0);  // 0.34
     for (int i = 0; i < N; ++i) {
-      auto c = gretl::axpb(0.6, a, 0.0) + gretl::axpb(0.3, b, 0.0); // bounded
-      b = gretl::axpb(0.3, a, 0.0) + gretl::axpb(0.5, b, 0.0);      // bounded
+      auto c = gretl::axpb(0.6, a, 0.0) + gretl::axpb(0.3, b, 0.0);  // bounded
+      b = gretl::axpb(0.3, a, 0.0) + gretl::axpb(0.5, b, 0.0);       // bounded
       a = c;
     }
     auto result = a + b;
@@ -1361,8 +1351,7 @@ TEST(PerformanceScaling, DeepDAGWithMultipleInputs)
     store.back_prop();
     double backprop_ms = elapsed_ms(start);
 
-    std::cout << "  depth=" << N
-              << " construct=" << construct_ms << "ms"
+    std::cout << "  depth=" << N << " construct=" << construct_ms << "ms"
               << " backprop=" << backprop_ms << "ms\n";
 
     // Verify finite gradients (bounded recurrence)
@@ -1497,11 +1486,9 @@ TEST(VectorBottleneck, ProfileByPhase)
     double backprop_ms = elapsed_ms(start);
 
     size_t bytes = S * sizeof(double);
-    std::cout << "  " << std::setw(8) << S
-              << " | " << std::setw(12) << construct_ms
-              << " | " << std::setw(11) << backprop_ms
-              << " | " << std::setw(8) << (construct_ms + backprop_ms)
-              << " | " << std::setw(13) << bytes << "\n";
+    std::cout << "  " << std::setw(8) << S << " | " << std::setw(12) << construct_ms << " | " << std::setw(11)
+              << backprop_ms << " | " << std::setw(8) << (construct_ms + backprop_ms) << " | " << std::setw(13) << bytes
+              << "\n";
 
     // Verify correctness
     double expected_norm = static_cast<double>(S) * std::pow(0.99, 2 * N);
@@ -1566,9 +1553,7 @@ TEST(VectorBottleneck, MoveVsCopy)
     }
 
     double speedup = copy_ms / move_ms;
-    std::cout << "  " << std::setw(8) << S
-              << " | " << std::setw(13) << move_ms
-              << " | " << std::setw(13) << copy_ms
+    std::cout << "  " << std::setw(8) << S << " | " << std::setw(13) << move_ms << " | " << std::setw(13) << copy_ms
               << " | " << std::setw(7) << speedup << "x\n";
   }
   std::cout << "---\n";
@@ -1600,9 +1585,8 @@ TEST(VectorBottleneck, CloneOverhead)
     double total_ms = elapsed_ms(start);
     double per_clone_us = total_ms / N * 1000.0;
 
-    std::cout << "  " << std::setw(8) << S
-              << " | " << std::setw(13) << total_ms
-              << " | " << std::setw(12) << per_clone_us << "\n";
+    std::cout << "  " << std::setw(8) << S << " | " << std::setw(13) << total_ms << " | " << std::setw(12)
+              << per_clone_us << "\n";
   }
   std::cout << "---\n";
 }
@@ -1656,10 +1640,8 @@ TEST(VectorBottleneck, CheckpointRecomputeVsNoRecompute)
     }
 
     double overhead = recomp_ms / no_recomp_ms;
-    std::cout << "  " << std::setw(8) << S
-              << " | " << std::setw(11) << no_recomp_ms
-              << " | " << std::setw(11) << recomp_ms
-              << " | " << std::setw(15) << overhead << "x\n";
+    std::cout << "  " << std::setw(8) << S << " | " << std::setw(11) << no_recomp_ms << " | " << std::setw(11)
+              << recomp_ms << " | " << std::setw(15) << overhead << "x\n";
   }
   std::cout << "---\n";
 }
