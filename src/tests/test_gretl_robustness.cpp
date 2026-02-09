@@ -1404,13 +1404,14 @@ TEST(PerformanceScaling, RepeatedResetAndBackprop)
 // the remaining performance bottlenecks are after Phase 1 (move overloads).
 // ---------------------------------------------------------------------------
 
-// Helper: a vector scale operation that moves its result into downstream
+// Helper: a vector scale operation using const ref + move (best practice)
 static VectorState vec_scale_move(const VectorState& a, double s)
 {
   VectorState b = a.clone({a});
 
   b.set_eval([s](const gretl::UpstreamStates& upstreams, gretl::DownstreamState& downstream) {
-    gretl::Vector C = upstreams[0].get<gretl::Vector>();  // copy from upstream
+    const gretl::Vector& A = upstreams[0].get<gretl::Vector>();
+    gretl::Vector C(A);  // copy-construct (avoids zero-init of Vector(sz))
     for (auto& v : C) {
       v *= s;
     }
@@ -1428,18 +1429,17 @@ static VectorState vec_scale_move(const VectorState& a, double s)
   return b.finalize();
 }
 
-// Helper: a vector scale that does NOT move (copies into set)
+// Helper: a vector scale using old pattern (copy input + copy output)
 static VectorState vec_scale_copy(const VectorState& a, double s)
 {
   VectorState b = a.clone({a});
 
   b.set_eval([s](const gretl::UpstreamStates& upstreams, gretl::DownstreamState& downstream) {
-    const gretl::Vector& A = upstreams[0].get<gretl::Vector>();
-    gretl::Vector C(A.size());
-    for (size_t i = 0; i < A.size(); ++i) {
-      C[i] = s * A[i];
+    gretl::Vector C = upstreams[0].get<gretl::Vector>();  // copy input
+    for (auto& v : C) {
+      v *= s;
     }
-    downstream.set(C);  // copy into primal (no move)
+    downstream.set(C);  // copy output (no move)
   });
 
   b.set_vjp([s](gretl::UpstreamStates& upstreams, const gretl::DownstreamState& downstream) {

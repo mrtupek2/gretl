@@ -52,17 +52,14 @@ struct State : public StateBase {
     data_store().vjps_[step()] = v;
   }
 
-  /// @brief Helper function to clone an existing state (keeping its type)
+  /// @brief Helper function to clone an existing state (keeping its type).
+  /// Allocates default-constructed primal storage; finalize() will overwrite it
+  /// via evaluate_forward(), so copying the source primal is unnecessary.
   /// @param upstreams The upstream dependencies for this new state
   State<T, D> clone(const std::vector<StateBase>& upstreams) const
   {
     gretl_assert(!upstreams.empty());
-    auto primal_ptr = primal().get();
-    gretl_assert(primal_ptr);
-    std::shared_ptr<std::any> new_val;
-    if (primal_ptr) {
-      new_val = std::make_shared<std::any>(*std::any_cast<T>(primal_ptr));
-    }
+    auto new_val = std::make_shared<std::any>(T{});
     State<T, D> state(&data_store(), data_store().states_.size(), new_val, initialize_zero_dual_);
     data_store().add_state(std::make_unique<State<T, D>>(state), upstreams);
     return state;
