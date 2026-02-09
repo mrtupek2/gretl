@@ -110,8 +110,11 @@ TEST(CheckpointCompare, ProceduralComparison)
     size_t budget;
   };
 
-  std::vector<Config> configs = {{10, 3}, {10, 6}, {50, 3}, {50, 5}, {50, 10}, {100, 3}, {100, 5}, {100, 10},
-                                 {200, 5}, {200, 10}, {500, 5}, {500, 10}};
+  std::vector<Config> configs = {{10, 3},    {10, 5},    {10, 6},    {10, 8},    {20, 3},    {20, 5},
+                                 {20, 8},    {20, 10},   {50, 3},    {50, 5},    {50, 10},   {50, 20},
+                                 {100, 3},   {100, 5},   {100, 10},  {100, 20},  {200, 5},   {200, 10},
+                                 {200, 20},  {500, 5},   {500, 10},  {500, 20},  {1000, 10}, {1000, 20},
+                                 {1000, 50}, {5000, 10}, {5000, 50}, {5000, 100}, {5000, 200}, {5000, 500}};
 
   std::cout << "\n--- Procedural Checkpoint Algorithm Comparison ---\n";
   std::cout << std::setw(6) << "N" << std::setw(8) << "Budget" << " | " << std::setw(10) << "Algorithm"
@@ -146,7 +149,9 @@ TEST(CheckpointCompare, DataStoreComparison)
     size_t budget;
   };
 
-  std::vector<Config> configs = {{10, 3}, {10, 6}, {50, 5}, {50, 10}, {100, 5}, {100, 10}, {200, 5}, {200, 10}};
+  std::vector<Config> configs = {{10, 3},  {10, 5},  {10, 6},  {10, 8},  {20, 3},  {20, 5},  {20, 8},
+                                 {20, 10}, {50, 5},  {50, 10}, {50, 20}, {100, 5}, {100, 10},{100, 20},
+                                 {200, 5}, {200, 10},{200, 20},{500, 10},{500, 20}};
 
   std::cout << "\n--- DataStore Checkpoint Algorithm Comparison ---\n";
   std::cout << std::setw(6) << "N" << std::setw(8) << "Budget" << " | " << std::setw(10) << "Algorithm"

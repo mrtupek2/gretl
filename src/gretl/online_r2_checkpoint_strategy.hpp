@@ -51,18 +51,21 @@ class OnlineR2CheckpointStrategy final : public CheckpointStrategy {
   void record_recomputation() override;
 
  private:
-  /// @brief A checkpoint slot: stores step and persistent flag.
+  /// @brief A checkpoint slot: stores step, persistent flag, and weight.
   struct Slot {
     size_t step;
     bool persistent;
+    size_t weight;  ///< Importance weight; increases via promotion (like Wang levels)
   };
 
-  /// @brief Find the index in slots_ of the best eviction candidate.
-  /// Chooses the non-persistent checkpoint whose removal creates the
-  /// smallest merged gap with its neighbors, maintaining approximately
-  /// uniform spacing.
-  /// @param newStep The step about to be added (used as virtual right boundary).
-  size_t find_eviction_candidate(size_t newStep) const;
+  /// @brief Find a "dispensable" slot using weight-based priority.
+  /// Iterates from highest to lowest step; a slot is dispensable if its
+  /// weight is less than the running maximum weight seen so far.
+  /// @return Index of the dispensable slot, or slots_.size() if none found.
+  size_t find_dispensable() const;
+
+  /// @brief Find the index of the rightmost non-persistent slot.
+  size_t find_rightmost_nonpersistent() const;
 
   size_t maxNumSlots_;
   std::vector<Slot> slots_;  ///< Sorted by step number
