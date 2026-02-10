@@ -58,7 +58,11 @@ class DataStore {
   DataStore(size_t maxStates);
 
   /// @brief virtual destructor
-  virtual ~DataStore() {}
+  virtual ~DataStore()
+  {
+    // Set flag to prevent try_to_free() from accessing freed memory during destruction
+    isDestroying_ = true;
+  }
 
   /// @brief create a new state in the graph, store it, return it
   template <typename T, typename D>
@@ -256,6 +260,9 @@ class DataStore {
 
   /// @brief specifies if graph is in construction or back-prop mode.  This is used for internal asserts.
   bool stillConstructingGraph_ = true;
+
+  /// @brief flag to prevent accessing freed memory during destruction
+  bool isDestroying_ = false;
 
   friend struct StateBase;
 
