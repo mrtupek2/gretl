@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: (BSD-3-Clause)
 
 /**
- * @file online_r2_checkpoint_strategy.hpp
+ * @file strumm_walther_checkpoint_strategy.hpp
  * @brief Stumm & Walther 2010 "Online r=2" checkpointing strategy.
  *
  * Reference: Philipp Stumm and Andrea Walther, "New Algorithms for Optimal
@@ -33,10 +33,10 @@ namespace gretl {
 /// - No level concept; eviction is based on spacing analysis
 /// - Works online: total number of steps need not be known a priori
 /// - Achieves near-optimal checkpoint distribution for unknown-length runs
-class OnlineR2CheckpointStrategy final : public CheckpointStrategy {
+class StrummWaltherCheckpointStrategy final : public CheckpointStrategy {
  public:
   /// @brief Construct with a given number of non-persistent checkpoint slots.
-  explicit OnlineR2CheckpointStrategy(size_t maxStates);
+  explicit StrummWaltherCheckpointStrategy(size_t maxStates);
 
   size_t add_checkpoint_and_get_index_to_remove(size_t step, bool persistent = false) override;
   size_t last_checkpoint_step() const override;

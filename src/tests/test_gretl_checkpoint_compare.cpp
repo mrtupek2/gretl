@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: (BSD-3-Clause)
 
 /// @file test_gretl_checkpoint_compare.cpp
-/// @brief Side-by-side comparison of Wang and OnlineR2 checkpointing strategies.
+/// @brief Side-by-side comparison of Wang and StrummWalther checkpointing strategies.
 
 #include <cmath>
 #include <iostream>
@@ -15,7 +15,7 @@
 #include "gretl/checkpoint.hpp"
 #include "gretl/checkpoint_strategy.hpp"
 #include "gretl/wang_checkpoint_strategy.hpp"
-#include "gretl/online_r2_checkpoint_strategy.hpp"
+#include "gretl/strumm_walther_checkpoint_strategy.hpp"
 #include "gretl/state.hpp"
 #include "gretl/data_store.hpp"
 
@@ -127,7 +127,7 @@ TEST(CheckpointCompare, ProceduralComparison)
     auto wang_result =
         run_procedural_test(std::make_unique<gretl::WangCheckpointStrategy>(cfg.budget), "Wang", cfg.N);
     auto r2_result =
-        run_procedural_test(std::make_unique<gretl::OnlineR2CheckpointStrategy>(cfg.budget), "OnlineR2", cfg.N);
+        run_procedural_test(std::make_unique<gretl::StrummWaltherCheckpointStrategy>(cfg.budget), "StrummWalther", cfg.N);
 
     ASSERT_NEAR(wang_result.gradient, r2_result.gradient, 1e-14)
         << "Gradient mismatch at N=" << cfg.N << " budget=" << cfg.budget;
@@ -166,11 +166,11 @@ TEST(CheckpointCompare, DataStoreComparison)
     auto wang_result =
         run_datastore_test(std::make_unique<gretl::WangCheckpointStrategy>(cfg.budget), "Wang", cfg.N);
     auto r2_result =
-        run_datastore_test(std::make_unique<gretl::OnlineR2CheckpointStrategy>(cfg.budget), "OnlineR2", cfg.N);
+        run_datastore_test(std::make_unique<gretl::StrummWaltherCheckpointStrategy>(cfg.budget), "StrummWalther", cfg.N);
 
     double expected_grad = std::pow(1.0 / 3.0, cfg.N);
     ASSERT_NEAR(wang_result.gradient, expected_grad, 1e-14) << "Wang gradient wrong at N=" << cfg.N;
-    ASSERT_NEAR(r2_result.gradient, expected_grad, 1e-14) << "OnlineR2 gradient wrong at N=" << cfg.N;
+    ASSERT_NEAR(r2_result.gradient, expected_grad, 1e-14) << "StrummWalther gradient wrong at N=" << cfg.N;
 
     for (const auto& r : {wang_result, r2_result}) {
       std::cout << std::setw(6) << cfg.N << std::setw(8) << cfg.budget << " | " << std::setw(10) << r.name

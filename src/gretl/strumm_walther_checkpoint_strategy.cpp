@@ -4,16 +4,16 @@
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 
-#include "online_r2_checkpoint_strategy.hpp"
+#include "strumm_walther_checkpoint_strategy.hpp"
 #include <cassert>
 #include <iostream>
 #include <limits>
 
 namespace gretl {
 
-OnlineR2CheckpointStrategy::OnlineR2CheckpointStrategy(size_t maxStates) : maxNumSlots_(maxStates) {}
+StrummWaltherCheckpointStrategy::StrummWaltherCheckpointStrategy(size_t maxStates) : maxNumSlots_(maxStates) {}
 
-size_t OnlineR2CheckpointStrategy::find_dispensable() const
+size_t StrummWaltherCheckpointStrategy::find_dispensable() const
 {
   // Weight-based dispensability (analogous to Wang's most_dispensable):
   // Iterate from highest step to lowest. Track the maximum weight seen.
@@ -79,7 +79,7 @@ size_t OnlineR2CheckpointStrategy::find_dispensable() const
   return bestIdx;
 }
 
-size_t OnlineR2CheckpointStrategy::find_rightmost_nonpersistent() const
+size_t StrummWaltherCheckpointStrategy::find_rightmost_nonpersistent() const
 {
   for (size_t i = slots_.size(); i > 0; --i) {
     if (!slots_[i - 1].persistent) {
@@ -89,7 +89,7 @@ size_t OnlineR2CheckpointStrategy::find_rightmost_nonpersistent() const
   return slots_.size();
 }
 
-size_t OnlineR2CheckpointStrategy::add_checkpoint_and_get_index_to_remove(size_t step, bool persistent)
+size_t StrummWaltherCheckpointStrategy::add_checkpoint_and_get_index_to_remove(size_t step, bool persistent)
 {
   size_t nextEraseStep = invalidCheckpointIndex;
 
@@ -138,13 +138,13 @@ size_t OnlineR2CheckpointStrategy::add_checkpoint_and_get_index_to_remove(size_t
   return nextEraseStep;
 }
 
-size_t OnlineR2CheckpointStrategy::last_checkpoint_step() const
+size_t StrummWaltherCheckpointStrategy::last_checkpoint_step() const
 {
   assert(!slots_.empty());
   return slots_.back().step;
 }
 
-bool OnlineR2CheckpointStrategy::erase_step(size_t stepIndex)
+bool StrummWaltherCheckpointStrategy::erase_step(size_t stepIndex)
 {
   for (auto it = slots_.begin(); it != slots_.end(); ++it) {
     if (it->step == stepIndex) {
@@ -157,7 +157,7 @@ bool OnlineR2CheckpointStrategy::erase_step(size_t stepIndex)
   return false;
 }
 
-bool OnlineR2CheckpointStrategy::contains_step(size_t stepIndex) const
+bool StrummWaltherCheckpointStrategy::contains_step(size_t stepIndex) const
 {
   for (const auto& s : slots_) {
     if (s.step == stepIndex) {
@@ -167,28 +167,28 @@ bool OnlineR2CheckpointStrategy::contains_step(size_t stepIndex) const
   return false;
 }
 
-void OnlineR2CheckpointStrategy::reset()
+void StrummWaltherCheckpointStrategy::reset()
 {
   slots_.erase(std::remove_if(slots_.begin(), slots_.end(), [](const Slot& s) { return !s.persistent; }),
                slots_.end());
 }
 
-size_t OnlineR2CheckpointStrategy::capacity() const { return maxNumSlots_; }
+size_t StrummWaltherCheckpointStrategy::capacity() const { return maxNumSlots_; }
 
-size_t OnlineR2CheckpointStrategy::size() const { return slots_.size(); }
+size_t StrummWaltherCheckpointStrategy::size() const { return slots_.size(); }
 
-void OnlineR2CheckpointStrategy::print(std::ostream& os) const
+void StrummWaltherCheckpointStrategy::print(std::ostream& os) const
 {
-  os << "CHECKPOINTS (OnlineR2): capacity = " << maxNumSlots_ << std::endl;
+  os << "CHECKPOINTS (StrummWalther): capacity = " << maxNumSlots_ << std::endl;
   for (const auto& s : slots_) {
     os << "   step=" << s.step << " weight=" << s.weight << (s.persistent ? " (persistent)" : "") << "\n";
   }
 }
 
-CheckpointMetrics OnlineR2CheckpointStrategy::metrics() const { return metrics_; }
+CheckpointMetrics StrummWaltherCheckpointStrategy::metrics() const { return metrics_; }
 
-void OnlineR2CheckpointStrategy::reset_metrics() { metrics_ = {}; }
+void StrummWaltherCheckpointStrategy::reset_metrics() { metrics_ = {}; }
 
-void OnlineR2CheckpointStrategy::record_recomputation() { metrics_.recomputations++; }
+void StrummWaltherCheckpointStrategy::record_recomputation() { metrics_.recomputations++; }
 
 }  // namespace gretl

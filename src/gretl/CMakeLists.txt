@@ -18,14 +18,14 @@ set(gretl_sources
     state_base.cpp
     vector_state.cpp
     wang_checkpoint_strategy.cpp
-    online_r2_checkpoint_strategy.cpp)
+    strumm_walther_checkpoint_strategy.cpp)
 
 set(gretl_headers
     about.hpp
     checkpoint.hpp
     checkpoint_strategy.hpp
     wang_checkpoint_strategy.hpp
-    online_r2_checkpoint_strategy.hpp
+    strumm_walther_checkpoint_strategy.hpp
     create_state.hpp
     data_store.hpp
     double_state.hpp

@@ -61,14 +61,19 @@ class DataStore {
   DataStore(size_t maxStates);
 
   /// @brief Constructor with user-provided checkpoint strategy.
-  /// @param strategy a checkpoint strategy implementation (e.g., WangCheckpointStrategy, OnlineR2CheckpointStrategy)
+  /// @param strategy a checkpoint strategy implementation (e.g., WangCheckpointStrategy, StrummWaltherCheckpointStrategy)
   DataStore(std::unique_ptr<CheckpointStrategy> strategy);
 
   /// @brief virtual destructor. Must clear states_ first because StateBase
   /// destructors call try_to_free() which accesses upstreams_ and other members.
   /// Without this, implicit reverse-declaration-order destruction would destroy
   /// upstreams_ before states_, causing use-after-free.
-  virtual ~DataStore() { states_.clear(); }
+  /// @brief virtual destructor
+  virtual ~DataStore()
+  {
+    // Set flag to prevent try_to_free() from accessing freed memory during destruction
+    isDestroying_ = true;
+  }
 
   /// @brief create a new state in the graph, store it, return it
   template <typename T, typename D>
@@ -261,6 +266,9 @@ class DataStore {
 
   /// @brief specifies if graph is in construction or back-prop mode.  This is used for internal asserts.
   bool stillConstructingGraph_ = true;
+
+  /// @brief flag to prevent accessing freed memory during destruction
+  bool isDestroying_ = false;
 
   friend struct StateBase;
 

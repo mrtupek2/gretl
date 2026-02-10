@@ -11,7 +11,7 @@
 #include "gretl/checkpoint.hpp"
 #include "gretl/checkpoint_strategy.hpp"
 #include "gretl/wang_checkpoint_strategy.hpp"
-#include "gretl/online_r2_checkpoint_strategy.hpp"
+#include "gretl/strumm_walther_checkpoint_strategy.hpp"
 #include "gretl/state.hpp"
 #include "gretl/data_store.hpp"
 
@@ -180,13 +180,13 @@ TEST_F(CheckpointFixture, Automated)
 
 // ---------- Parameterized tests across checkpoint strategies ----------
 
-enum class StrategyType { Wang, OnlineR2 };
+enum class StrategyType { Wang, StrummWalther };
 
 std::string strategy_name(StrategyType t)
 {
   switch (t) {
     case StrategyType::Wang: return "Wang";
-    case StrategyType::OnlineR2: return "OnlineR2";
+    case StrategyType::StrummWalther: return "StrummWalther";
   }
   return "Unknown";
 }
@@ -195,7 +195,7 @@ std::unique_ptr<gretl::CheckpointStrategy> make_strategy(StrategyType t, size_t 
 {
   switch (t) {
     case StrategyType::Wang: return std::make_unique<gretl::WangCheckpointStrategy>(slots);
-    case StrategyType::OnlineR2: return std::make_unique<gretl::OnlineR2CheckpointStrategy>(slots);
+    case StrategyType::StrummWalther: return std::make_unique<gretl::StrummWaltherCheckpointStrategy>(slots);
   }
   return nullptr;
 }
@@ -338,7 +338,7 @@ TEST_P(CheckpointStrategyTest, Automated)
 }
 
 INSTANTIATE_TEST_SUITE_P(AllStrategies, CheckpointStrategyTest,
-                         ::testing::Values(StrategyType::Wang, StrategyType::OnlineR2),
+                         ::testing::Values(StrategyType::Wang, StrategyType::StrummWalther),
                          [](const ::testing::TestParamInfo<StrategyType>& info) {
                            return strategy_name(info.param);
                          });
