@@ -25,7 +25,7 @@ size_t StrummWaltherCheckpointStrategy::find_dispensable() const
   // recomputation cost (gap_left * gap_right). This spacing-aware tiebreaker
   // can outperform Wang's arbitrary "first found" selection.
 
-  // First pass: find the dispensable weight threshold
+  // First pass (right to left): find the dispensable weight threshold.
   size_t maxWeight = 0;
   size_t dispensableWeight = std::numeric_limits<size_t>::max();
   for (size_t i = slots_.size(); i > 0; --i) {
@@ -43,25 +43,27 @@ size_t StrummWaltherCheckpointStrategy::find_dispensable() const
     return slots_.size();  // none found
   }
 
-  // Second pass: among all slots at dispensableWeight, pick the one with
-  // minimum gap_left * gap_right (minimum delta recomputation cost).
+  // Second pass (right to left): find the rightmost non-persistent slot
+  // with weight strictly greater than dispensableWeight.  Any candidate
+  // at an index below this bound is guaranteed to have a higher-weight
+  // slot after it, so we can skip the per-candidate inner scan.
+  size_t higherBound = 0;
+  for (size_t i = slots_.size(); i > 0; --i) {
+    size_t idx = i - 1;
+    if (!slots_[idx].persistent && slots_[idx].weight > dispensableWeight) {
+      higherBound = idx;
+      break;
+    }
+  }
+
+  // Third pass (left to right): among dispensable-weight candidates
+  // before higherBound, pick the one with minimum gap_left * gap_right.
   size_t bestIdx = slots_.size();
   size_t bestProduct = std::numeric_limits<size_t>::max();
 
-  for (size_t i = 0; i < slots_.size(); ++i) {
+  for (size_t i = 0; i < higherBound; ++i) {
     if (slots_[i].persistent) continue;
     if (slots_[i].weight != dispensableWeight) continue;
-
-    // Check that this slot is actually in a dispensable position
-    // (there must be a higher-weight slot at a higher step)
-    bool hasHigherWeightAfter = false;
-    for (size_t j = i + 1; j < slots_.size(); ++j) {
-      if (!slots_[j].persistent && slots_[j].weight > dispensableWeight) {
-        hasHigherWeightAfter = true;
-        break;
-      }
-    }
-    if (!hasHigherWeightAfter) continue;
 
     size_t leftStep = (i > 0) ? slots_[i - 1].step : 0;
     size_t rightStep = (i + 1 < slots_.size()) ? slots_[i + 1].step : slots_.back().step + 1;

@@ -8,10 +8,14 @@
 #include <cmath>
 #include <stdio.h>
 #include <iostream>
+#include <iomanip>
 #include "gtest/gtest.h"
 #include "gretl/vector_state.hpp"
 #include "gretl/data_store.hpp"
 #include "gretl/wang_checkpoint_strategy.hpp"
+#include "gretl/strumm_walther_checkpoint_strategy.hpp"
+#include "gretl/store_all_checkpoint_strategy.hpp"
+#include "gretl/periodic_checkpoint_strategy.hpp"
 #include "gretl/test_utils.hpp"
 
 using gretl::print;
@@ -150,4 +154,141 @@ auto compute_f(const gretl::State<std::vector<double>>& c, const gretl::State<st
   d = d + b;
   d = d + b;
   return d + b;
+}
+
+// ---------- Prime-sieve checkpoint performance comparison ----------
+
+namespace {
+
+bool is_prime(size_t n)
+{
+  if (n < 2) return false;
+  for (size_t i = 2; i * i <= n; ++i) {
+    if (n % i == 0) return false;
+  }
+  return true;
+}
+
+/// @brief Forward step: x -> x/3 + 2 (simple nonlinear map).
+gretl::State<double> chain_step(const gretl::State<double>& prev)
+{
+  auto b = prev.clone({prev});
+
+  b.set_eval([](const gretl::UpstreamStates& upstreams, gretl::DownstreamState& downstream) {
+    downstream.set(upstreams[0].get<double>() / 3.0 + 2.0);
+  });
+
+  b.set_vjp([](gretl::UpstreamStates& upstreams, const gretl::DownstreamState& downstream) {
+    upstreams[0].get_dual<double, double>() += downstream.get_dual<double>() / 3.0;
+  });
+
+  return b.finalize();
+}
+
+/// @brief Scaled addition: (a, b) -> a + scale * b.
+gretl::State<double> scaled_add(const gretl::State<double>& a, const gretl::State<double>& b, double scale)
+{
+  auto c = a.clone({a, b});
+
+  c.set_eval([scale](const gretl::UpstreamStates& upstreams, gretl::DownstreamState& downstream) {
+    downstream.set(upstreams[0].get<double>() + scale * upstreams[1].get<double>());
+  });
+
+  c.set_vjp([scale](gretl::UpstreamStates& upstreams, const gretl::DownstreamState& downstream) {
+    double dbar = downstream.get_dual<double>();
+    upstreams[0].get_dual<double, double>() += dbar;
+    upstreams[1].get_dual<double, double>() += dbar * scale;
+  });
+
+  return c.finalize();
+}
+
+/// @brief Build a prime-sieve graph and back-propagate.
+///
+/// Graph structure (N steps total):
+///   - Composite steps: x[i] = x[i-1]/3 + 2  (simple chain)
+///   - Prime steps:     x[i] = x[i-1]/3 + 2 + 0.01 * sum(x[p] for all previous primes p)
+///
+/// This creates long-range skip connections at each prime, stressing the
+/// checkpoint system's ability to keep distant states available.
+struct PrimeSieveResult {
+  std::string name;
+  gretl::CheckpointMetrics metrics;
+  double gradient;
+  size_t maxStored;
+};
+
+PrimeSieveResult run_prime_sieve(std::unique_ptr<gretl::CheckpointStrategy> strategy, const std::string& name,
+                                  size_t N)
+{
+  gretl::DataStore dataStore(std::move(strategy));
+  gretl::State<double> x = dataStore.create_state<double, double>(1.0);
+
+  std::vector<gretl::State<double>> primeStates;
+  size_t maxStored = 0;
+
+  for (size_t i = 1; i <= N; ++i) {
+    x = chain_step(x);
+
+    if (is_prime(i)) {
+      double scale = 0.01;
+      for (auto& ps : primeStates) {
+        x = scaled_add(x, ps, scale);
+      }
+      primeStates.push_back(x);
+    }
+
+    size_t curSize = dataStore.checkpointStrategy_->size();
+    if (curSize > maxStored) maxStored = curSize;
+  }
+
+  x = set_as_objective(x);
+  dataStore.stillConstructingGraph_ = false;
+  dataStore.back_prop();
+
+  double grad = dataStore.get_dual<double, double>(0);
+  return {name, dataStore.checkpointStrategy_->metrics(), grad, maxStored};
+}
+
+}  // namespace
+
+TEST(Graph, PrimeSieveCheckpointComparison)
+{
+  std::vector<size_t> lengths = {20, 50, 100, 200};
+
+  std::cout << "\n--- Prime-Sieve Graph: Checkpoint Strategy Comparison ---\n";
+  std::cout << std::setw(6) << "N" << " | " << std::setw(14) << "Strategy" << std::setw(10) << "stores"
+            << std::setw(10) << "evictions" << std::setw(12) << "recomps" << std::setw(12) << "maxStored"
+            << std::setw(14) << "ratio(r/N)"
+            << "\n";
+  std::cout << std::string(80, '-') << "\n";
+
+  for (size_t N : lengths) {
+    // Use budget = sqrt(N) for bounded strategies, period = sqrt(N) for periodic
+    size_t budget = std::max(size_t(3), static_cast<size_t>(std::sqrt(static_cast<double>(N))));
+
+    auto all_result = run_prime_sieve(std::make_unique<gretl::StoreAllCheckpointStrategy>(), "StoreAll", N);
+    auto wang_result =
+        run_prime_sieve(std::make_unique<gretl::WangCheckpointStrategy>(budget), "Wang(" + std::to_string(budget) + ")", N);
+    auto sw_result = run_prime_sieve(std::make_unique<gretl::StrummWaltherCheckpointStrategy>(budget),
+                                     "SW(" + std::to_string(budget) + ")", N);
+    auto periodic_result = run_prime_sieve(std::make_unique<gretl::PeriodicCheckpointStrategy>(budget),
+                                           "Periodic(" + std::to_string(budget) + ")", N);
+
+    // All strategies must produce the same gradient
+    ASSERT_NEAR(all_result.gradient, wang_result.gradient, 1e-10)
+        << "Wang gradient mismatch at N=" << N;
+    ASSERT_NEAR(all_result.gradient, sw_result.gradient, 1e-10)
+        << "StrummWalther gradient mismatch at N=" << N;
+    ASSERT_NEAR(all_result.gradient, periodic_result.gradient, 1e-10)
+        << "Periodic gradient mismatch at N=" << N;
+
+    for (const auto& r : {all_result, wang_result, sw_result, periodic_result}) {
+      std::cout << std::setw(6) << N << " | " << std::setw(14) << r.name << std::setw(10) << r.metrics.stores
+                << std::setw(10) << r.metrics.evictions << std::setw(12) << r.metrics.recomputations << std::setw(12)
+                << r.maxStored << std::setw(14) << std::fixed << std::setprecision(3)
+                << static_cast<double>(r.metrics.recomputations) / static_cast<double>(N) << "\n";
+    }
+  }
+  std::cout << std::endl;
 }

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: (BSD-3-Clause)
 
 /// @file test_gretl_checkpoint_compare.cpp
-/// @brief Side-by-side comparison of Wang and StrummWalther checkpointing strategies.
+/// @brief Side-by-side comparison of all checkpointing strategies.
 
 #include <cmath>
 #include <iostream>
@@ -16,6 +16,8 @@
 #include "gretl/checkpoint_strategy.hpp"
 #include "gretl/wang_checkpoint_strategy.hpp"
 #include "gretl/strumm_walther_checkpoint_strategy.hpp"
+#include "gretl/store_all_checkpoint_strategy.hpp"
+#include "gretl/periodic_checkpoint_strategy.hpp"
 #include "gretl/state.hpp"
 #include "gretl/data_store.hpp"
 
@@ -126,12 +128,19 @@ TEST(CheckpointCompare, ProceduralComparison)
     auto wang_result = run_procedural_test(std::make_unique<gretl::WangCheckpointStrategy>(cfg.budget), "Wang", cfg.N);
     auto r2_result = run_procedural_test(std::make_unique<gretl::StrummWaltherCheckpointStrategy>(cfg.budget),
                                          "StrummWalther", cfg.N);
+    auto all_result = run_procedural_test(std::make_unique<gretl::StoreAllCheckpointStrategy>(), "StoreAll", cfg.N);
+    auto periodic_result = run_procedural_test(std::make_unique<gretl::PeriodicCheckpointStrategy>(cfg.budget),
+                                               "Periodic", cfg.N);
 
     ASSERT_NEAR(wang_result.gradient, r2_result.gradient, 1e-14)
         << "Gradient mismatch at N=" << cfg.N << " budget=" << cfg.budget;
+    ASSERT_NEAR(wang_result.gradient, all_result.gradient, 1e-14)
+        << "StoreAll gradient mismatch at N=" << cfg.N;
+    ASSERT_NEAR(wang_result.gradient, periodic_result.gradient, 1e-14)
+        << "Periodic gradient mismatch at N=" << cfg.N << " period=" << cfg.budget;
 
-    for (const auto& r : {wang_result, r2_result}) {
-      std::cout << std::setw(6) << cfg.N << std::setw(8) << cfg.budget << " | " << std::setw(10) << r.name
+    for (const auto& r : {wang_result, r2_result, all_result, periodic_result}) {
+      std::cout << std::setw(6) << cfg.N << std::setw(8) << cfg.budget << " | " << std::setw(12) << r.name
                 << std::setw(10) << r.metrics.stores << std::setw(10) << r.metrics.evictions << std::setw(12)
                 << r.metrics.recomputations << std::setw(14) << std::fixed << std::setprecision(3)
                 << static_cast<double>(r.metrics.recomputations) / static_cast<double>(cfg.N) << "\n";
@@ -162,13 +171,19 @@ TEST(CheckpointCompare, DataStoreComparison)
     auto wang_result = run_datastore_test(std::make_unique<gretl::WangCheckpointStrategy>(cfg.budget), "Wang", cfg.N);
     auto r2_result = run_datastore_test(std::make_unique<gretl::StrummWaltherCheckpointStrategy>(cfg.budget),
                                         "StrummWalther", cfg.N);
+    auto all_result = run_datastore_test(std::make_unique<gretl::StoreAllCheckpointStrategy>(), "StoreAll", cfg.N);
+    auto periodic_result =
+        run_datastore_test(std::make_unique<gretl::PeriodicCheckpointStrategy>(cfg.budget), "Periodic", cfg.N);
 
     double expected_grad = std::pow(1.0 / 3.0, cfg.N);
     ASSERT_NEAR(wang_result.gradient, expected_grad, 1e-14) << "Wang gradient wrong at N=" << cfg.N;
     ASSERT_NEAR(r2_result.gradient, expected_grad, 1e-14) << "StrummWalther gradient wrong at N=" << cfg.N;
+    ASSERT_NEAR(all_result.gradient, expected_grad, 1e-14) << "StoreAll gradient wrong at N=" << cfg.N;
+    ASSERT_NEAR(periodic_result.gradient, expected_grad, 1e-14)
+        << "Periodic gradient wrong at N=" << cfg.N << " period=" << cfg.budget;
 
-    for (const auto& r : {wang_result, r2_result}) {
-      std::cout << std::setw(6) << cfg.N << std::setw(8) << cfg.budget << " | " << std::setw(10) << r.name
+    for (const auto& r : {wang_result, r2_result, all_result, periodic_result}) {
+      std::cout << std::setw(6) << cfg.N << std::setw(8) << cfg.budget << " | " << std::setw(12) << r.name
                 << std::setw(10) << r.metrics.stores << std::setw(10) << r.metrics.evictions << std::setw(12)
                 << r.metrics.recomputations << std::setw(14) << std::fixed << std::setprecision(3)
                 << static_cast<double>(r.metrics.recomputations) / static_cast<double>(cfg.N) << "\n";

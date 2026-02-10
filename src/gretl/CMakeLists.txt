@@ -18,7 +18,9 @@ set(gretl_sources
     state_base.cpp
     vector_state.cpp
     wang_checkpoint_strategy.cpp
-    strumm_walther_checkpoint_strategy.cpp)
+    strumm_walther_checkpoint_strategy.cpp
+    store_all_checkpoint_strategy.cpp
+    periodic_checkpoint_strategy.cpp)
 
 set(gretl_headers
     about.hpp
@@ -26,6 +28,8 @@ set(gretl_headers
     checkpoint_strategy.hpp
     wang_checkpoint_strategy.hpp
     strumm_walther_checkpoint_strategy.hpp
+    store_all_checkpoint_strategy.hpp
+    periodic_checkpoint_strategy.hpp
     create_state.hpp
     data_store.hpp
     double_state.hpp
