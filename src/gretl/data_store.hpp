@@ -16,7 +16,10 @@
 #include <functional>
 #include <memory>
 #include <any>
+#include <type_traits>
+#include <utility>
 #include "checkpoint.hpp"
+#include "checkpoint_strategy.hpp"
 #include "print_utils.hpp"
 
 #ifdef __GNUG__
@@ -52,13 +55,21 @@ struct defaultInitializeZeroDual {
 /// checkpointing state information, and its backpropagated sensitivities
 class DataStore {
  public:
-  /// @brief Constructor
-  /// @param maxStates maximum number of states the users is allowing to be allocated for the dynamic checkpointing.
-  /// This does not include persistent states, nor states held in scope by the user.
-  DataStore(size_t maxStates);
+  /// @brief Constructor requiring a checkpoint strategy.
+  /// @param strategy a checkpoint strategy implementation (e.g., WangCheckpointStrategy,
+  /// StrummWaltherCheckpointStrategy)
+  explicit DataStore(std::unique_ptr<CheckpointStrategy> strategy);
 
+  /// @brief virtual destructor. Must clear states_ first because StateBase
+  /// destructors call try_to_free() which accesses upstreams_ and other members.
+  /// Without this, implicit reverse-declaration-order destruction would destroy
+  /// upstreams_ before states_, causing use-after-free.
   /// @brief virtual destructor
-  virtual ~DataStore() {}
+  virtual ~DataStore()
+  {
+    // Set flag to prevent try_to_free() from accessing freed memory during destruction
+    isDestroying_ = true;
+  }
 
   /// @brief create a new state in the graph, store it, return it
   template <typename T, typename D>
@@ -155,26 +166,21 @@ class DataStore {
     return *tptr;
   }
 
-  /// @brief Set primal value
+  /// @brief Set primal value (forwarding version: moves rvalues, copies lvalues)
   /// @param step step
   /// @param t value of type T to set primal to
   template <typename T>
-  void set_primal(Int step, const T& t)
+  void set_primal(Int step, T&& t)
   {
-    T* tptr = std::any_cast<T>(any_primal(step).get());
+    using U = std::decay_t<T>;
+    U* tptr = std::any_cast<U>(any_primal(step).get());
     if (!tptr) {
       gretl_assert(!stillConstructingGraph_);
-      // MRT, debug reverse pass here
-      // if (usageCount_[step] != 1) {
-      //   print("step", step);
-      //   print_graph();
-      // }
-      // gretl_assert(usageCount_[step] == 1);
-      any_primal(step) = std::make_shared<std::any>(t);
+      any_primal(step) = std::make_shared<std::any>(std::forward<T>(t));
       return;
     }
     gretl_assert(tptr);
-    *tptr = t;
+    *tptr = std::forward<T>(t);
   }
 
   /// @brief Get dual value
@@ -249,13 +255,16 @@ class DataStore {
                                                 ///< eventually used in some future step as an upstream
 
   /// container which track the states in the graph with allocated data
-  CheckpointManager checkpointManager_;
+  std::unique_ptr<CheckpointStrategy> checkpointStrategy_;
 
   /// step counter
   Int currentStep_;
 
   /// @brief specifies if graph is in construction or back-prop mode.  This is used for internal asserts.
   bool stillConstructingGraph_ = true;
+
+  /// @brief flag to prevent accessing freed memory during destruction
+  bool isDestroying_ = false;
 
   friend struct StateBase;
 

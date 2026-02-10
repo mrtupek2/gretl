@@ -6,8 +6,11 @@
 
 set(gretl_test_sources
     test_gretl_checkpoint.cpp
+    test_gretl_checkpoint_compare.cpp
     test_gretl_dynamics.cpp
-    test_gretl_graph.cpp)
+    test_gretl_graph.cpp
+    test_gretl_robustness.cpp
+    test_persistent_scope.cpp)
 
 foreach(test ${gretl_test_sources})
     get_filename_component( test_name ${test} NAME_WE )

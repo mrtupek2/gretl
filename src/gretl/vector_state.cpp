@@ -18,10 +18,9 @@ VectorState testing_update(const VectorState& a)
     auto& b_ = downstream;
 
     const Vector& A = a_.get<Vector>();
-    size_t sz = A.size();
-    Vector B(sz);
-    for (size_t i = 0; i < sz; ++i) {
-      B[i] = A[i] / 3.0 + 2.0;
+    Vector B(A);  // copy-construct (avoids zero-init of Vector(sz))
+    for (auto& v : B) {
+      v = v / 3.0 + 2.0;
     }
     b_.set(std::move(B));
   });
@@ -44,7 +43,7 @@ VectorState operator+(const VectorState& a, const VectorState& b)
   VectorState c = a.clone({a, b});
 
   c.set_eval([](const UpstreamStates& upstreams, DownstreamState& downstream) {
-    Vector C = upstreams[0].get<Vector>();  // just making a copy
+    Vector C = upstreams[0].get<Vector>();
     const Vector& B = upstreams[1].get<Vector>();
     size_t sz = C.size();
     for (size_t i = 0; i < sz; ++i) {
@@ -76,8 +75,9 @@ VectorState operator*(const VectorState& a, double b)
   VectorState c = a.clone({a});
 
   c.set_eval([b](const UpstreamStates& upstreams, DownstreamState& downstream) {
-    Vector C = upstreams[0].get<Vector>();
-    for (auto&& v : C) {
+    const Vector& A = upstreams[0].get<Vector>();
+    Vector C(A);  // copy-construct (avoids zero-init of Vector(sz))
+    for (auto& v : C) {
       v *= b;
     }
     downstream.set(std::move(C));
@@ -102,8 +102,8 @@ State<double> inner_product(const VectorState& a, const VectorState& b)
 
   c.set_eval([](const UpstreamStates& upstreams, DownstreamState& downstream) {
     double prod = 0.0;
-    auto A = upstreams[0].get<Vector>();
-    auto B = upstreams[1].get<Vector>();
+    const auto& A = upstreams[0].get<Vector>();
+    const auto& B = upstreams[1].get<Vector>();
     size_t sz = get_same_size<double>({&A, &B});
     for (size_t i = 0; i < sz; ++i) {
       prod += A[i] * B[i];
@@ -140,9 +140,10 @@ VectorState operator*(const VectorState& a, const VectorState& b)
   VectorState c = a.clone({a, b});
 
   c.set_eval([](const UpstreamStates& upstreams, DownstreamState& downstream) {
-    Vector C = upstreams[0].get<Vector>();
+    const Vector& A = upstreams[0].get<Vector>();
     const Vector& B = upstreams[1].get<Vector>();
-    size_t sz = get_same_size<double>({&B, &C});
+    size_t sz = get_same_size<double>({&A, &B});
+    Vector C(A);  // copy-construct (avoids zero-init of Vector(sz))
     for (size_t i = 0; i < sz; ++i) {
       C[i] *= B[i];
     }
